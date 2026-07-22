@@ -1,18 +1,24 @@
-from machine import Pin, ADC
+from machine import Pin, ADC, WDT
 from time import sleep_ms, ticks_ms, ticks_diff
 
 BTN_PIN = 18
 DEBOUNCE_DIFF_MS = 50
+TIMER_DIFF_MS = 5000
+LUX_THRESHOLD = 50
 
 ldrPin = ADC(Pin(34))
 ldrPin.atten(ADC.ATTN_11DB)
 
 btn = Pin(BTN_PIN, Pin.IN, Pin.PULL_UP)
 
-print(" ====== Sistema Kanban Inicializado ====== ")
+print("Contador de Producao Inicializado")
 
 counter = 0
+temporizador_bloqueio = 0 # testar microparada
+microparada = False
 objetoContado = False;
+
+resetado = False
 
 ultima_leitura = btn.value()
 estado = ultima_leitura
@@ -37,23 +43,34 @@ def debouncing():
 while True:
     pressionado = debouncing()
 
-    if not pressionado:
+    if not pressionado and not resetado:
         print(f"Sistema reiniciando")
         counter = 0
+        resetado = True
 
     valorBruto = ldrPin.read()
 
-    percentualLuz = (((valorBruto / 4095) * 100) - 100) * -1
+    valorReal = 100 - (valorBruto / 4095 * 100)
 
-    print(f"Valor Lido: {percentualLuz}")
+    objetoDetectado = valorBruto < LUX_THRESHOLD
 
-    if percentualLuz < 50 and not objetoContado:
-        counter += 1
+    if objetoDetectado and not objetoContado:
         objetoContado = True
-        print(f"Novo objeto! Total: {counter}")
-    if percentualLuz > 50 and objetoContado:
+        temporizador_bloqueio = ticks_ms()
+        microparada = False
+    elif not objetoDetectado and objetoContado:
+        counter += 1
+        print(f"Peca detectada! Total: {counter}")
         objetoContado = False
-    
-    print(f"Total: {counter}")
+        resetado = False
 
-    sleep_ms(10)
+    temporizador_agora = ticks_ms()
+
+    esteiraObstruida = ticks_diff(temporizador_agora, temporizador_bloqueio) >= TIMER_DIFF_MS
+
+    if esteiraObstruida and not microparada:
+        counter = 0
+        microparada = True
+        print("Turno resetado com sucesso")
+
+    sleep_ms(100)
