@@ -1,10 +1,10 @@
-from machine import Pin, ADC, WDT
+from machine import Pin, ADC
 from time import sleep_ms, ticks_ms, ticks_diff
 
 BTN_PIN = 18
 DEBOUNCE_DIFF_MS = 50
 TIMER_DIFF_MS = 5000
-LUX_THRESHOLD = 50
+PERCENTAGE_THRESHOLD = 50
 
 ldrPin = ADC(Pin(34))
 ldrPin.atten(ADC.ATTN_11DB)
@@ -16,7 +16,7 @@ print("Contador de Producao Inicializado")
 counter = 0
 temporizador_bloqueio = 0 # testar microparada
 microparada = False
-objetoContado = False;
+objetoContado = False
 
 resetado = False
 
@@ -44,15 +44,21 @@ while True:
     pressionado = debouncing()
 
     if not pressionado and not resetado:
-        print(f"Sistema reiniciando")
-        counter = 0
         resetado = True
+        counter = 0
+        temporizador_bloqueio = 0
+        microparada = False
+        objetoContado = False
+        print("Turno resetado com sucesso. Contadores zerados.")
+
+    elif pressionado:
+        resetado = False
 
     valorBruto = ldrPin.read()
 
     valorReal = 100 - (valorBruto / 4095 * 100)
 
-    objetoDetectado = valorBruto < LUX_THRESHOLD
+    objetoDetectado = valorReal < PERCENTAGE_THRESHOLD
 
     if objetoDetectado and not objetoContado:
         objetoContado = True
@@ -62,15 +68,16 @@ while True:
         counter += 1
         print(f"Peca detectada! Total: {counter}")
         objetoContado = False
-        resetado = False
 
     temporizador_agora = ticks_ms()
 
-    esteiraObstruida = ticks_diff(temporizador_agora, temporizador_bloqueio) >= TIMER_DIFF_MS
+    esteiraObstruida = (
+        objetoContado and 
+        ticks_diff(temporizador_agora, temporizador_bloqueio) >= TIMER_DIFF_MS
+        )
 
     if esteiraObstruida and not microparada:
-        counter = 0
         microparada = True
-        print("Turno resetado com sucesso")
+        print("Alerta: Micro-parada detectada!")
 
-    sleep_ms(100)
+    sleep_ms(10)
