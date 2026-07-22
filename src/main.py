@@ -49,10 +49,10 @@ while True:
         temporizador_bloqueio = 0
         microparada = False
         objetoContado = False
-        print("Turno resetado com sucesso. Contadores zerados.")
 
     elif pressionado:
         resetado = False
+        print("Turno resetado com sucesso. Contadores zerados.")
 
     valorBruto = ldrPin.read()
 
