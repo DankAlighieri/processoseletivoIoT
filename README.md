@@ -27,6 +27,8 @@ O firmware está concentrado em `src/main.py` e mantém um loop principal não b
 - `atualizar_contagem()`: controla a entrada e a saída de uma peça no sensor;
 - `verificar_microparada()`: compara o tempo de obstrução com o limite configurado.
 
+Todas essas funções são chamadas no laço infinito, de forma que o fluxo do algoritmo seja fácil de ser compreendido. 
+
 ### Estados principais
 
 | Estado | Finalidade |
@@ -36,6 +38,8 @@ O firmware está concentrado em `src/main.py` e mantém um loop principal não b
 | `temporizadorBloqueio` | Guarda o instante em que a obstrução começou |
 | `microparada` | Evita alertas repetidos durante a mesma obstrução |
 | `resetado` | Controla uma única execução do reset por acionamento |
+
+Essas variáveis de estado são importantes para gerenciar, de forma eurística, o sistema. Por exemplo: Impedir que o mesmo evento dispare notificações diversas vezes. 
 
 ## Componentes Utilizados na Simulação
 
